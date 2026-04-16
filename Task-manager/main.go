@@ -25,7 +25,12 @@ func main() {
 		id INTEGER PRIMARY KEY AUTOINCREMENT,
 		title TEXT,
 		done BOOLEAN
-	)
+	);
+	CREATE TABLE IF NOT EXISTS users (
+		id INTEGER PRIMARY KEY AUTOINCREMENT,
+		username TEXT,
+		password TEXT
+	);
 	`)
 	if err != nil {
 		panic(err)
@@ -44,7 +49,12 @@ func main() {
 		w.Write([]byte("Task Manager API Running 🚀"))
 	})
 
+	//Task routes
 	http.HandleFunc("/task", handler.TaskHandler(store, rdb))
+
+	// Auth routes
+	http.HandleFunc("/signup", handler.AuthHandler(store))
+	http.HandleFunc("/login", handler.AuthHandler(store))
 
 	// 🔹 Start server
 	err = http.ListenAndServe(":8080", nil)

@@ -8,7 +8,7 @@ import (
 
 var ctx = context.Background()
 
-func InitRedis() *redis.Client {
+func NewRedisClient() *redis.Client {
 	rdb := redis.NewClient(&redis.Options{
 		Addr:     "localhost:6379",
 		Password: "", // no password set
