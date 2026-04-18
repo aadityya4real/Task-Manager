@@ -14,19 +14,21 @@ func New(db *sql.DB) *Store {
 	return &Store{DB: db}
 }
 
-func (s *Store) InsertTask(t types.Task) (int64, error) {
+func (s *Store) InsertTask(t types.Task, username string) (int64, error) {
 	result, err := s.DB.Exec(
-		"INSERT INTO tasks (title, done) VALUES (?, ?)",
-		t.Title, false,
+		"INSERT INTO tasks (title, done, user_id) VALUES (?, ?, (SELECT id FROM users WHERE username = ?))",
+		t.Title, false, username,
 	)
 	if err != nil {
 		return 0, err
 	}
 	return result.LastInsertId()
 }
-
-func (s *Store) GetTasks() ([]types.Task, error) {
-	rows, err := s.DB.Query("SELECT id, title, done FROM tasks")
+func (s *Store) GetTasks(username string) ([]types.Task, error) {
+	rows, err := s.DB.Query(
+		"SELECT id, title, done FROM tasks WHERE user_id = (SELECT id FROM users WHERE username = ?)",
+		username,
+	)
 	if err != nil {
 		return nil, err
 	}

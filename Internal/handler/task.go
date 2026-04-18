@@ -18,6 +18,8 @@ var ctx = context.Background()
 
 func TaskHandler(store *storage.Store, rdb *redis.Client) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
+		username := r.Context().Value("username").(string)
+		key := "tasks:" + username
 
 		if r.Method == "POST" {
 			var t types.Task
@@ -33,12 +35,12 @@ func TaskHandler(store *storage.Store, rdb *redis.Client) http.HandlerFunc {
 				return
 			}
 
-			id, err := store.InsertTask(t)
+			id, err := store.InsertTask(t, username)
 			if err != nil {
 				http.Error(w, "Failed to insert", http.StatusInternalServerError)
 				return
 			}
-			rdb.Del(ctx, "tasks")
+			rdb.Del(ctx, key)
 			fmt.Println("CACHE CLEARED")
 
 			t.ID = int(id)
@@ -50,7 +52,7 @@ func TaskHandler(store *storage.Store, rdb *redis.Client) http.HandlerFunc {
 
 		if r.Method == "GET" {
 			// Try Redis first
-			data, err := rdb.Get(ctx, "tasks").Result()
+			data, err := rdb.Get(ctx, key).Result()
 
 			if err == nil {
 				fmt.Println("CACHE HIT ✅")
@@ -67,7 +69,7 @@ func TaskHandler(store *storage.Store, rdb *redis.Client) http.HandlerFunc {
 			}
 
 			// Fetch from DB
-			tasks, err := store.GetTasks()
+			tasks, err := store.GetTasks(username)
 			if err != nil {
 				http.Error(w, "Failed to fetch", http.StatusInternalServerError)
 				return
@@ -78,7 +80,7 @@ func TaskHandler(store *storage.Store, rdb *redis.Client) http.HandlerFunc {
 				http.Error(w, "JSON error", http.StatusInternalServerError)
 				return
 			}
-			err = rdb.Set(ctx, "tasks", jsonData, 5*time.Minute).Err()
+			err = rdb.Set(ctx, key, jsonData, 5*time.Minute).Err()
 			if err != nil {
 				fmt.Println("REDIS SET ERROR:", err)
 			}
@@ -116,7 +118,7 @@ func TaskHandler(store *storage.Store, rdb *redis.Client) http.HandlerFunc {
 				return
 			}
 
-			rdb.Del(ctx, "tasks")
+			rdb.Del(ctx, key)
 			fmt.Println("CACHE CLEARED")
 			w.Header().Set("Content-Type", "application/json")
 			json.NewEncoder(w).Encode(map[string]string{
@@ -145,7 +147,7 @@ func TaskHandler(store *storage.Store, rdb *redis.Client) http.HandlerFunc {
 				http.Error(w, "Failed to delete", http.StatusInternalServerError)
 				return
 			}
-			rdb.Del(ctx, "tasks")
+			rdb.Del(ctx, key)
 			fmt.Println("CACHE CLEARED")
 
 			w.Header().Set("Content-Type", "application/json")

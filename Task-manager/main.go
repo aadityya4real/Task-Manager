@@ -21,27 +21,27 @@ func main() {
 	}
 
 	// 🔹 Create table if not exists
+	// Users table
 	_, err = db.Exec(`
-	CREATE TABLE IF NOT EXISTS tasks (
-		id INTEGER PRIMARY KEY AUTOINCREMENT,
-		title TEXT,
-		done BOOLEAN
-	);
-	CREATE TABLE IF NOT EXISTS users (
-		id INTEGER PRIMARY KEY AUTOINCREMENT,
-		username TEXT,
-		password TEXT
+CREATE TABLE IF NOT EXISTS users (
+	id INTEGER PRIMARY KEY AUTOINCREMENT,
+	username TEXT,
+	password TEXT
+)
+`)
+	if err != nil {
+		panic(err)
+	}
 
-
+	// Tasks table
+	_, err = db.Exec(`
 CREATE TABLE IF NOT EXISTS tasks (
 	id INTEGER PRIMARY KEY AUTOINCREMENT,
 	title TEXT,
 	done BOOLEAN,
 	user_id INTEGER
-
-		//
-	);
-	`)
+)
+`)
 	if err != nil {
 		panic(err)
 	}
@@ -54,20 +54,16 @@ CREATE TABLE IF NOT EXISTS tasks (
 	// 🔹 Create Store
 	store := storage.New(db)
 
-	// 🔹 Routes
-	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
-		w.Write([]byte("Task Manager API Running 🚀"))
-	})
+	http.HandleFunc("/signup", handler.SignupHandler(store))
+	http.HandleFunc("/login", handler.LoginHandler(store))
 
-	//Task routes
 	http.HandleFunc("/task", middleware.AuthMiddleware(
 		handler.TaskHandler(store, rdb),
 	))
 
-	// Auth routes
-	http.HandleFunc("/signup", handler.AuthHandler(store))
-	http.HandleFunc("/login", handler.AuthHandler(store))
-
+	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
+		w.Write([]byte("Task Manager API Running 🚀"))
+	})
 	// 🔹 Start server
 	err = http.ListenAndServe(":8080", nil)
 	if err != nil {
