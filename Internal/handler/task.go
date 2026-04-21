@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"net/http"
 	"strconv"
-	"time"
 
 	"github.com/aadityya4real/Task-manager/internal/storage"
 	"github.com/aadityya4real/Task-manager/internal/types"
@@ -50,43 +49,32 @@ func TaskHandler(store *storage.Store, rdb *redis.Client) http.HandlerFunc {
 		}
 
 		if r.Method == "GET" {
-			// Try Redis first
-			data, err := rdb.Get(ctx, key).Result()
 
-			if err == nil {
-				fmt.Println("CACHE HIT ✅")
-				// ✅ CACHE HIT
-				w.Header().Set("Content-Type", "application/json")
-				w.Write([]byte(data))
-				return
+			userID := r.Context().Value("user_id").(int)
 
-			} else if err == redis.Nil {
-				fmt.Println("CACHE MISS ❌")
+			// 🔥 ADD THIS (pagination)
+			limitStr := r.URL.Query().Get("limit")
+			offsetStr := r.URL.Query().Get("offset")
 
-			} else {
-				fmt.Println("REDIS ERROR ⚠️:", err)
+			limit := 10
+			offset := 0
+
+			if l, err := strconv.Atoi(limitStr); err == nil {
+				limit = l
+			}
+			if o, err := strconv.Atoi(offsetStr); err == nil {
+				offset = o
 			}
 
-			// Fetch from DB
-			tasks, err := store.GetTasks(userID)
+			// 🔥 PASS limit + offset
+			tasks, err := store.GetTasks(userID, limit, offset)
 			if err != nil {
 				http.Error(w, "Failed to fetch", http.StatusInternalServerError)
 				return
 			}
 
-			jsonData, err := json.Marshal(tasks)
-			if err != nil {
-				http.Error(w, "JSON error", http.StatusInternalServerError)
-				return
-			}
-			err = rdb.Set(ctx, key, jsonData, 5*time.Minute).Err()
-			if err != nil {
-				fmt.Println("REDIS SET ERROR:", err)
-			}
-			w.Header().Set("Content-Type", "application/json")
-			w.Write(jsonData)
+			json.NewEncoder(w).Encode(tasks)
 			return
-
 		}
 
 		// 🔹 PUT → Update Task

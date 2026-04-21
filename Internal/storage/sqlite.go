@@ -25,10 +25,11 @@ func (s *Store) InsertTask(t types.Task, userID int) (int64, error) {
 	}
 	return result.LastInsertId()
 }
-func (s *Store) GetTasks(userID int) ([]types.Task, error) {
+func (s *Store) GetTasks(userID int, limit, offset int) ([]types.Task, error) {
+
 	rows, err := s.DB.Query(
-		"SELECT id, title, done FROM tasks WHERE user_id = ?",
-		userID,
+		"SELECT id, title, done FROM tasks WHERE user_id = ? LIMIT ? OFFSET ?",
+		userID, limit, offset,
 	)
 	if err != nil {
 		return nil, err
@@ -36,14 +37,15 @@ func (s *Store) GetTasks(userID int) ([]types.Task, error) {
 	defer rows.Close()
 
 	var tasks []types.Task
+
 	for rows.Next() {
 		var t types.Task
 		rows.Scan(&t.ID, &t.Title, &t.Done)
 		tasks = append(tasks, t)
 	}
+
 	return tasks, nil
 }
-
 func (s *Store) UpdateTask(id int, userID int, t types.Task) error {
 	result, err := s.DB.Exec(
 		"UPDATE tasks SET title = ?, done = ? WHERE id = ? AND user_id = ?",
