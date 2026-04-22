@@ -61,10 +61,15 @@ function loadTasks() {
     tasks.forEach(task => {
       const li = document.createElement("li");
 
-      li.innerHTML = `
-        ${task.title}
-        <button onclick="deleteTask(${task.id})">Delete</button>
-      `;
+  li.innerHTML = `
+  <input type="checkbox" 
+         ${task.done ? "checked" : ""} 
+         onchange="toggleTask(${task.id}, '${task.title}', this.checked)" />
+
+  ${task.title}
+
+  <button onclick="deleteTask(${task.id})">Delete</button>
+`;
 
       list.appendChild(li);
     });
