@@ -118,7 +118,14 @@ func main() {
 	fmt.Println("🌍 Server running on port 8080")
 
 	// 🔥 START SERVER
-	err = http.ListenAndServe(":8080", enableCORS(mux))
+	port := os.Getenv("PORT")
+	if port == "" {
+		port = "8080"
+	}
+
+	fmt.Println("🚀 Running on port:", port)
+
+	err = http.ListenAndServe(":"+port, enableCORS(mux))
 	if err != nil {
 		panic(err)
 	}
