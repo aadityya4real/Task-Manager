@@ -15,7 +15,7 @@ import (
 	"github.com/redis/go-redis/v9"
 )
 
-// ✅ CORS FIX (important for frontend)
+// ✅ CORS FIX
 func enableCORS(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 
@@ -23,7 +23,6 @@ func enableCORS(next http.Handler) http.Handler {
 		w.Header().Set("Access-Control-Allow-Headers", "Content-Type, Authorization")
 		w.Header().Set("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS")
 
-		// ✅ handle preflight properly
 		if r.Method == "OPTIONS" {
 			w.WriteHeader(http.StatusOK)
 			return
@@ -68,11 +67,10 @@ func main() {
 		panic(err)
 	}
 
-	// 🔹 Redis
-	// 🔹 Redis setup (works for both local + deployment)
-	redisURL := os.Getenv("REDIS_URL")
+	// 🔹 Redis setup
+	var rdb *redis.Client // ✅ declare FIRST
 
-	var rdb *redis.Client
+	redisURL := os.Getenv("REDIS_URL")
 
 	if redisURL != "" {
 		opt, err := redis.ParseURL(redisURL)
@@ -81,26 +79,37 @@ func main() {
 		}
 		rdb = redis.NewClient(opt)
 	} else {
-		// local fallback
 		rdb = redis.NewClient(&redis.Options{
 			Addr: "localhost:6379",
 		})
 	}
+
 	fmt.Println("✅ Redis initialized")
+
+	// (optional: just to avoid unused warning)
+	_ = rdb
 
 	// 🔹 Store
 	store := storage.New(db)
 
-	// 🔥 ROUTER (VERY IMPORTANT)
+	// 🔥 ROUTER
 	mux := http.NewServeMux()
 
-	fmt.Println("📌 Registering routes...")
+	// Serve frontend
+	mux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
+		http.ServeFile(w, r, "frontend/index.html")
+	})
 
+	// Static files
+	fs := http.FileServer(http.Dir("./frontend"))
+	mux.Handle("/static/", http.StripPrefix("/static/", fs))
+
+	// API routes
 	mux.HandleFunc("/signup", handler.SignupHandler(store))
 	mux.HandleFunc("/login", handler.LoginHandler(store))
 	mux.HandleFunc("/tasks", middleware.AuthMiddleware(handler.TaskHandler(store, rdb)))
 
-	fmt.Println("🌍 Server running on http://localhost:8080")
+	fmt.Println("🌍 Server running on port 8080")
 
 	// 🔥 START SERVER
 	err = http.ListenAndServe(":8080", enableCORS(mux))
