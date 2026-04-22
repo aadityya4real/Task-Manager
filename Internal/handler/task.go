@@ -8,8 +8,8 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/aadityya4real/Task-manager/internal/storage"
-	"github.com/aadityya4real/Task-manager/internal/types"
+	"github.com/aadityya4real/Task-Manager/internal/storage"
+	"github.com/aadityya4real/Task-Manager/internal/types"
 	"github.com/redis/go-redis/v9"
 )
 

@@ -1,6 +1,8 @@
 package storage
 
-import "github.com/aadityya4real/Task-manager/internal/types"
+import (
+	"github.com/aadityya4real/Task-Manager/internal/types"
+)
 
 // Insert User
 func (s *Store) CreateUser(u types.User) (int64, error) {
