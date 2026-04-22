@@ -1,3 +1,4 @@
+console.log("JS LOADED");
 const BASE_URL = "https://task-manager-78yn.onrender.com";
 
 // 🔐 SIGNUP

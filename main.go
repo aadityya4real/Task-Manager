@@ -101,8 +101,17 @@ func main() {
 	})
 
 	// Static files
-	fs := http.FileServer(http.Dir("./frontend"))
+	fs := http.FileServer(http.Dir("frontend"))
 	mux.Handle("/static/", http.StripPrefix("/static/", fs))
+
+	// IMPORTANT: serve index ONLY for "/"
+	mux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
+		if r.URL.Path != "/" {
+			http.NotFound(w, r)
+			return
+		}
+		http.ServeFile(w, r, "frontend/index.html")
+	})
 
 	// API routes
 	mux.HandleFunc("/signup", handler.SignupHandler(store))
