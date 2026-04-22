@@ -4,7 +4,7 @@ import (
 	"database/sql"
 	"fmt"
 
-	"github.com/aadityya4real/Task-Manager/internal/types"
+	"task-manager/internal/types"
 )
 
 type Store struct {

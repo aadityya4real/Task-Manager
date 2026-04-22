@@ -1,7 +1,7 @@
 package storage
 
 import (
-	"github.com/aadityya4real/Task-Manager/internal/types"
+	"task-manager/internal/types"
 )
 
 // Insert User

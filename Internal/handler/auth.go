@@ -5,9 +5,10 @@ import (
 	"fmt"
 	"net/http"
 
-	"github.com/aadityya4real/Task-Manager/internal/storage"
-	"github.com/aadityya4real/Task-Manager/internal/types"
-	"github.com/aadityya4real/Task-Manager/internal/utils"
+	"task-manager/internal/storage"
+	"task-manager/internal/types"
+	"task-manager/internal/utils"
+
 	"golang.org/x/crypto/bcrypt"
 )
 
