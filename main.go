@@ -4,6 +4,7 @@ import (
 	"database/sql"
 	"fmt"
 	"net/http"
+	"os"
 
 	_ "modernc.org/sqlite"
 
@@ -67,9 +68,15 @@ func main() {
 	}
 
 	// 🔹 Redis
-	rdb := redis.NewClient(&redis.Options{
-		Addr: "localhost:6379",
-	})
+	opt, err := redis.ParseURL(os.Getenv("REDIS_URL"))
+	if err != nil {
+		panic(err)
+	}
+
+	rdb := redis.NewClient(opt)
+	// rdb := redis.NewClient(&redis.Options{
+	// 	Addr: "localhost:6379",
+	// })
 	fmt.Println("✅ Redis initialized")
 
 	// 🔹 Store

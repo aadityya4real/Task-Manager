@@ -38,7 +38,11 @@ function loadTasks() {
     }
   })
   .then(res => res.json())
-  .then(tasks => {
+  .then(result => {
+    console.log("GET response:", result); // 🔥 debug
+
+    const tasks = result.data; // 🔥 IMPORTANT
+
     const list = document.getElementById("taskList");
     list.innerHTML = "";
 
@@ -46,35 +50,33 @@ function loadTasks() {
       const li = document.createElement("li");
 
       li.innerHTML = `
-        <input type="checkbox" ${task.done ? "checked" : ""} 
-               onchange="toggleTask(${task.id}, '${task.title}', this.checked)"
-        
-        <span style="text-decoration:${task.done ? "line-through" : "none"}">
-          ${task.title}
-        </span>
-
-        <button onclick="editTask(${task.id}, '${task.title}')">Edit</button>
+        ${task.title}
         <button onclick="deleteTask(${task.id})">Delete</button>
       `;
 
       list.appendChild(li);
     });
-  });
+  })
+  .catch(err => console.error("LOAD ERROR:", err));
 }
 
 function addTask() {
-    event.preventDefault();
+  const title = document.getElementById("taskInput").value;
+
   fetch(API + "/tasks", {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
       "Authorization": "Bearer " + localStorage.getItem("token")
     },
-    body: JSON.stringify({
-      title: document.getElementById("taskInput").value
-    })
+    body: JSON.stringify({ title })
   })
-  .then(() => loadTasks());
+  .then(res => res.json())
+  .then(data => {
+    console.log("POST response:", data); // 🔥 debug
+    loadTasks();
+  })
+  .catch(err => console.error("ADD ERROR:", err));
 }
 
 function deleteTask(id) {
