@@ -68,7 +68,7 @@ func main() {
 	}
 
 	// 🔹 Redis setup
-	var rdb *redis.Client // ✅ declare FIRST
+	var rdb *redis.Client
 
 	redisURL := os.Getenv("REDIS_URL")
 
@@ -86,45 +86,35 @@ func main() {
 
 	fmt.Println("✅ Redis initialized")
 
-	// (optional: just to avoid unused warning)
-	_ = rdb
-
 	// 🔹 Store
 	store := storage.New(db)
 
 	// 🔥 ROUTER
 	mux := http.NewServeMux()
 
-	// Serve frontend
+	// ✅ Serve index.html ONLY once (NO DUPLICATE)
 	mux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
 		http.ServeFile(w, r, "frontend/index.html")
 	})
 
-	// Static files
+	// ✅ Static files (JS, CSS)
 	fs := http.FileServer(http.Dir("frontend"))
 	mux.Handle("/static/", http.StripPrefix("/static/", fs))
 
-	// IMPORTANT: serve index ONLY for "/"
-	mux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
-
-		http.ServeFile(w, r, "frontend/index.html")
-	})
-
-	// API routes
+	// ✅ API routes
 	mux.HandleFunc("/signup", handler.SignupHandler(store))
 	mux.HandleFunc("/login", handler.LoginHandler(store))
 	mux.HandleFunc("/tasks", middleware.AuthMiddleware(handler.TaskHandler(store, rdb)))
 
-	fmt.Println("🌍 Server running on port 8080")
-
-	// 🔥 START SERVER
+	// 🔥 PORT FIX FOR RENDER
 	port := os.Getenv("PORT")
 	if port == "" {
 		port = "8080"
 	}
 
-	fmt.Println("🚀 Running on port:", port)
+	fmt.Println("🌍 Server running on port:", port)
 
+	// 🔥 START SERVER
 	err = http.ListenAndServe(":"+port, enableCORS(mux))
 	if err != nil {
 		panic(err)
