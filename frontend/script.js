@@ -1,4 +1,4 @@
-console.log("JS LOADED");
+
 const BASE_URL = "https://task-manager-78yn.onrender.com";
 
 // 🔐 SIGNUP
@@ -36,17 +36,24 @@ function login() {
   })
   .then(res => res.json())
   .then(data => {
+    console.log("LOGIN RESPONSE:", data);
+
+    if (!data.token) {
+      alert("Login failed");
+      return;
+    }
+
     localStorage.setItem("token", data.token);
     document.getElementById("auth").style.display = "none";
     document.getElementById("app").style.display = "block";
     loadTasks();
   })
-  .catch(err => console.error("Login error:", err));
+  .catch(err => console.error("LOGIN ERROR:", err));
 }
 
 // 📥 LOAD TASKS
 function loadTasks() {
-  fetch(API + "/tasks", {
+  fetch(BASE_URL + "/tasks", {
     headers: {
       "Authorization": "Bearer " + localStorage.getItem("token")
     }
