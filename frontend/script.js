@@ -1,51 +1,51 @@
-
 const BASE_URL = "https://task-manager-78yn.onrender.com";
 
 // 🔐 SIGNUP
 function signup() {
-  const username = document.getElementById("username").value;
-  const password = document.getElementById("password").value;
+  const username = document.getElementById("username").value.trim();
+  const password = document.getElementById("password").value.trim();
+
+  if (!username || !password) {
+    alert("Please enter username & password");
+    return;
+  }
 
   fetch(`${BASE_URL}/signup`, {
     method: "POST",
-    headers: {
-      "Content-Type": "application/json"
-    },
-    body: JSON.stringify({
-      username,
-      password
-    })
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ username, password })
   })
   .then(res => res.json())
-  .then(data => {
-    alert("Signup successful");
-    console.log(data);
+  .then(() => {
+    alert("Signup successful ✅");
   })
   .catch(err => console.error("Signup error:", err));
 }
 
 // 🔐 LOGIN
 function login() {
+  const username = document.getElementById("username").value;
+  const password = document.getElementById("password").value;
+
   fetch(`${BASE_URL}/login`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({
-      username: document.getElementById("username").value,
-      password: document.getElementById("password").value
-    })
+    body: JSON.stringify({ username, password })
   })
   .then(res => res.json())
   .then(data => {
     console.log("LOGIN RESPONSE:", data);
 
     if (!data.token) {
-      alert("Login failed");
+      alert("Login failed ❌");
       return;
     }
 
     localStorage.setItem("token", data.token);
+
     document.getElementById("auth").style.display = "none";
     document.getElementById("app").style.display = "block";
+
     loadTasks();
   })
   .catch(err => console.error("LOGIN ERROR:", err));
@@ -53,15 +53,17 @@ function login() {
 
 // 📥 LOAD TASKS
 function loadTasks() {
-  fetch(BASE_URL + "/tasks", {
+  fetch(`${BASE_URL}/tasks`, {
     headers: {
       "Authorization": "Bearer " + localStorage.getItem("token")
     }
   })
   .then(res => res.json())
   .then(result => {
+    console.log("TASKS:", result);
 
-    const tasks = result.data;
+    const tasks = result.data || [];
+
     const list = document.getElementById("taskList");
     list.innerHTML = "";
 
@@ -71,7 +73,7 @@ function loadTasks() {
       li.innerHTML = `
         <input type="checkbox" 
           ${task.done ? "checked" : ""} 
-          onchange="toggleTask(${task.id}, '${task.title}', this.checked)" />
+          onchange="toggleTask(${task.id}, '${task.title.replace(/'/g, "\\'")}', this.checked)" />
 
         <span class="${task.done ? 'done' : ''}">
           ${task.title}
@@ -82,11 +84,21 @@ function loadTasks() {
 
       list.appendChild(li);
     });
-  });
+  })
+  .catch(err => console.error("LOAD ERROR:", err));
 }
+
 // ➕ ADD TASK
 function addTask() {
-  const title = document.getElementById("taskInput").value;
+  const input = document.getElementById("taskInput");
+  const title = input.value.trim();
+
+  if (!title) {
+    alert("Task cannot be empty ❌");
+    return;
+  }
+
+  console.log("Adding:", title);
 
   fetch(`${BASE_URL}/tasks`, {
     method: "POST",
@@ -97,7 +109,11 @@ function addTask() {
     body: JSON.stringify({ title })
   })
   .then(res => res.json())
-  .then(() => loadTasks())
+  .then(data => {
+    console.log("ADD RESPONSE:", data);
+    input.value = "";        // ✅ clear input
+    loadTasks();             // ✅ reload list
+  })
   .catch(err => console.error("ADD ERROR:", err));
 }
 
@@ -109,7 +125,8 @@ function deleteTask(id) {
       "Authorization": "Bearer " + localStorage.getItem("token")
     }
   })
-  .then(() => loadTasks());
+  .then(() => loadTasks())
+  .catch(err => console.error("DELETE ERROR:", err));
 }
 
 // 🔄 TOGGLE TASK
@@ -120,11 +137,10 @@ function toggleTask(id, title, done) {
       "Content-Type": "application/json",
       "Authorization": "Bearer " + localStorage.getItem("token")
     },
-    body: JSON.stringify({
-      title: title,
-      done: done
-    })
-  }).then(() => loadTasks());
+    body: JSON.stringify({ title, done })
+  })
+  .then(() => loadTasks())
+  .catch(err => console.error("TOGGLE ERROR:", err));
 }
 
 // ✏️ EDIT TASK
@@ -142,7 +158,9 @@ function editTask(id, oldTitle) {
       title: newTitle,
       done: false
     })
-  }).then(() => loadTasks());
+  })
+  .then(() => loadTasks())
+  .catch(err => console.error("EDIT ERROR:", err));
 }
 
 // 🚪 LOGOUT
@@ -154,6 +172,7 @@ function logout() {
 // 🔄 AUTO LOGIN
 window.onload = function () {
   const token = localStorage.getItem("token");
+
   if (token) {
     document.getElementById("auth").style.display = "none";
     document.getElementById("app").style.display = "block";
